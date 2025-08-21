@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "af305e66-aa00-45ce-8c3f-cccf3b40dbda"
+      }
+    },
+    "owner": "buildwell"
   }
 }
