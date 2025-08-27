@@ -1,7 +1,8 @@
+import MinimalButton from '@/components/MinimalButton';
 import { AuthContext } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
-import { Alert, Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const router = useRouter();
 
@@ -42,7 +43,7 @@ export default function Register() {
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Register" onPress={handleRegister} />
+      <MinimalButton title="Register" onPress={handleRegister} />
       <Text onPress={() => router.replace('/login')} style={styles.link}>
         Already have an account? Login
       </Text>
@@ -59,11 +60,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   input: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
-    marginBottom: 15,
-    borderRadius: 8,
+    borderColor: '#e5e7eb',
+    padding: 16,
+    fontSize: 16,
+    color: '#222',
+    marginBottom: 8,
   },
   link: { marginTop: 15, textAlign: 'center', color: 'blue' },
 });

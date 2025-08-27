@@ -6,6 +6,6 @@ export default function Index() {
   const { token, user } = useContext(AuthContext);
 
   if (!token) return <Redirect href="/login" />;
-  if (user && !user.is_onboarded) return <Redirect href="/onboarding" />;
+  if (user && user.is_onboarded) return <Redirect href="/onboarding" />;
   return <Redirect href="/dashboard" />;
 }
