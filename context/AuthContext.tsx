@@ -1,3 +1,4 @@
+import { saveToken } from '@/utils/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, ReactNode, useEffect, useState } from 'react';
 import client from '../api/client';
@@ -42,8 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const res = await client.post('/auth/login', { email, password });
     setToken(res.data.access_token);
     setUser(res.data.user);
-
-    await AsyncStorage.setItem('token', res.data.access_token);
+    saveToken(res.data.access_token);
     await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
   };
 
@@ -55,15 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     setToken(res.data.access_token);
     setUser(res.data.user);
-
-    await AsyncStorage.setItem('token', res.data.access_token);
+    saveToken(res.data.access_token);
     await AsyncStorage.setItem('user', JSON.stringify(res.data.user));
   };
 
   const logout = async () => {
     setToken(null);
     setUser(null);
-    await AsyncStorage.multiRemove(['token', 'user']);
+    await AsyncStorage.multiRemove(['access_token', 'user']);
   };
 
   return (
