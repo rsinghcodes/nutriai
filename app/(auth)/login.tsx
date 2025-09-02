@@ -1,5 +1,6 @@
 import MinimalButton from '@/components/MinimalButton';
 import { AuthContext } from '@/context/AuthContext';
+import { spacing } from '@/theme';
 import { useRouter } from 'expo-router';
 import React, { useContext, useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -54,7 +55,7 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: '#FAFAFA',
-    borderRadius: 24,
+    borderRadius: spacing.lg,
     borderWidth: 1,
     borderColor: '#e5e7eb',
     padding: 16,

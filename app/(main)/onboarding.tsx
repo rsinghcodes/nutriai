@@ -35,7 +35,7 @@ export default function OnboardingStepper() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const { data: updatedUser } = await client.get('/users/me', {
+      const { data: updatedUser } = await client.get('/user/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
 

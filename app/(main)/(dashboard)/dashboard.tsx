@@ -1,6 +1,9 @@
 import client from '@/api/client';
+import MinimalButton from '@/components/MinimalButton';
 import { AuthContext } from '@/context/AuthContext';
+import { useDashboard } from '@/context/DashboardContext';
 import { colors, fontSizes, spacing } from '@/theme';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
@@ -18,19 +21,20 @@ const screenWidth = Dimensions.get('window').width;
 export default function Dashboard() {
   const [trends, setTrends] = useState<any>(null);
   const router = useRouter();
+  const { refreshFlag } = useDashboard();
   const { logout, user } = useContext(AuthContext);
 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
-        const res = await client.get('/dashboard/trends');
+        const res = await client.get('/dashboard/trends?days=7');
         setTrends(res.data);
       } catch (e) {
         console.log('Error fetching trends', e);
       }
     };
     fetchTrends();
-  }, []);
+  }, [refreshFlag]);
 
   const handleLogout = () => {
     logout();
@@ -41,33 +45,33 @@ export default function Dashboard() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Hi, {user?.name}</Text>
-        <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        <View style={styles.headerActionItems}>
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/profile')}
+            style={styles.accountBtn}
+          >
+            <MaterialCommunityIcons name="account" size={18} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={styles.actionButton}
-          onPress={() => router.push('/foodlog')}
-        >
-          <Text style={styles.actionText}>🍽 Log Food</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          // onPress={() => router.push("/workout-log")}
-        >
-          <Text style={styles.actionText}>🏋️ Log Workout</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionButton}
-          // onPress={() => router.push("/generate-plan")}
-        >
-          <Text style={styles.actionText}>🤖 AI Plan</Text>
-        </TouchableOpacity>
+        <MinimalButton
+          title="🍽 Log Food"
+          onPress={() => router.push('/FoodLog')}
+        />
+        <MinimalButton
+          title="🏋️ Log Workout"
+          onPress={() => router.push('/WorkoutLog')}
+        />
+        <MinimalButton
+          title="🤖 AI Plan"
+          onPress={() => router.push('/AIPlan')}
+        />
       </View>
 
       {/* Daily Progress Rings */}
@@ -116,48 +120,47 @@ export default function Dashboard() {
 
       {/* Net Calories */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Today’s Net Calories</Text>
+        <Text style={styles.sectionTitle}>Today's Net Calories</Text>
         <Text style={styles.netCalories}>
-          {trends?.trends?.[0]?.net || 0} kcal
+          {Math.floor(trends?.trends?.[6]?.net) || 0} kcal
         </Text>
         <Text style={styles.subText}>
-          Consumed: {trends?.trends?.[0]?.consumed || 0} kcal • Burned:{' '}
-          {trends?.trends?.[0]?.burned || 0} kcal
+          Consumed: {Math.floor(trends?.trends?.[6]?.consumed) || 0} kcal •
+          Burned: {Math.floor(trends?.trends?.[6]?.burned) || 0} kcal
         </Text>
       </View>
 
       {/* Calories Trend */}
       <Text style={styles.sectionTitle}>7-Day Calories Trend</Text>
-      <View style={styles.card}>
-        <LineChart
-          data={{
-            labels:
-              trends?.trends?.map((t: any) =>
-                new Date(t.date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })
-              ) || [],
-            datasets: [
-              {
-                data: trends?.trends?.map((t: any) => t.net) || [
-                  0, 0, 0, 0, 0, 0, 0,
-                ],
-              },
-            ],
-          }}
-          width={screenWidth - spacing.lg * 2}
-          height={220}
-          chartConfig={{
-            backgroundGradientFrom: colors.card,
-            backgroundGradientTo: colors.card,
-            decimalPlaces: 0,
-            color: () => colors.primary,
-            labelColor: () => colors.muted,
-          }}
-          bezier
-        />
-      </View>
+      <LineChart
+        data={{
+          labels:
+            trends?.trends?.map((t: any) =>
+              new Date(t.date).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+              })
+            ) || [],
+          datasets: [
+            {
+              data: trends?.trends?.map((t: any) => t.net) || [
+                0, 0, 0, 0, 0, 0, 0,
+              ],
+            },
+          ],
+        }}
+        width={screenWidth - spacing.md * 2}
+        height={220}
+        chartConfig={{
+          backgroundGradientFrom: colors.card,
+          backgroundGradientTo: colors.card,
+          // decimalPlaces: 0,
+          color: () => colors.primary,
+          labelColor: () => colors.muted,
+        }}
+        style={styles.chart}
+        bezier
+      />
     </ScrollView>
   );
 }
@@ -174,15 +177,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  headerActionItems: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   title: {
     fontSize: fontSizes.xl,
     fontWeight: '700',
     marginBottom: spacing.md,
     color: colors.text,
   },
+  accountBtn: {
+    padding: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: colors.border,
+    marginLeft: spacing.md,
+  },
   logoutBtn: {
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
     backgroundColor: colors.border,
     borderRadius: 8,
   },
@@ -226,7 +240,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xs,
     backgroundColor: colors.primary,
     padding: spacing.sm,
-    borderRadius: 8,
+    borderRadius: spacing.lg,
     alignItems: 'center',
   },
   actionText: {
@@ -245,5 +259,9 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  chart: {
+    borderRadius: 12,
+    marginBottom: spacing.md,
   },
 });
