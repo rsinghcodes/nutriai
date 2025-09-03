@@ -13,7 +13,6 @@ export default function OnboardingStepper() {
 
   const [step, setStep] = useState(1);
 
-  // Form state
   const [age, setAge] = useState('');
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
@@ -51,7 +50,6 @@ export default function OnboardingStepper() {
 
   return (
     <View style={styles.container}>
-      {/* Progress Bar */}
       <ProgressBar
         progress={step / 3}
         color="#4CAF50"
@@ -59,7 +57,6 @@ export default function OnboardingStepper() {
       />
       <Text style={styles.stepText}>Step {step} of 3</Text>
 
-      {/* Step 1: Basics */}
       {step === 1 && (
         <View>
           <Text style={styles.title}>Your Basics</Text>
@@ -87,7 +84,6 @@ export default function OnboardingStepper() {
         </View>
       )}
 
-      {/* Step 2: Lifestyle */}
       {step === 2 && (
         <View>
           <Text style={styles.title}>Lifestyle</Text>
@@ -115,7 +111,6 @@ export default function OnboardingStepper() {
         </View>
       )}
 
-      {/* Step 3: Goals */}
       {step === 3 && (
         <View>
           <Text style={styles.title}>Your Goal</Text>
@@ -137,7 +132,6 @@ export default function OnboardingStepper() {
         </View>
       )}
 
-      {/* Navigation Buttons */}
       <View style={styles.buttonRow}>
         {step > 1 && <MinimalButton title="Back" onPress={prevStep} />}
         {step < 3 && <MinimalButton title="Next" onPress={nextStep} />}

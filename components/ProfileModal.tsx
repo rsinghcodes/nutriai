@@ -25,7 +25,11 @@ export default function ProfileModal({
           <View style={{ marginTop: spacing.sm }}>{children}</View>
 
           <View style={styles.actions}>
-            <MinimalButton title="Close" onPress={onClose} />
+            <MinimalButton
+              title="Close"
+              onPress={onClose}
+              variant="secondary"
+            />
             <MinimalButton title="Save" onPress={onSave} />
           </View>
         </View>
@@ -54,7 +58,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     marginTop: spacing.lg,
   },
   btn: {

@@ -1,13 +1,13 @@
 import client from '@/api/client';
+import AlertDialog from '@/components/AlertDialog';
 import ProfileModal from '@/components/ProfileModal';
 import { AuthContext } from '@/context/AuthContext';
 import { colors, fontSizes, spacing } from '@/theme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 import { router } from 'expo-router';
 import React, { useContext, useEffect, useState } from 'react';
 import {
-  Alert,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,81 +17,113 @@ import {
 
 export default function Profile() {
   const { logout } = useContext(AuthContext);
-  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const [goalModalVisible, setGoalModalVisible] = useState<boolean>(false);
 
+  // Local states
   const [goal, setGoal] = useState<
     'maintain healthy' | 'weight gain' | 'weight loss'
   >('maintain healthy');
   const [targetWeight, setTargetWeight] = useState('');
-  const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [weight, setWeight] = useState('');
+  const [height, setHeight] = useState('');
+  const [dietaryPrefs, setDietaryPrefs] = useState('');
 
-  const fetchProfile = async () => {
-    try {
-      const res = await client.get('/user/me');
-      setUser(res.data);
-      setGoal((res.data.goals as any) || 'maintain healthy');
-      if (res.data.target_weight)
-        setTargetWeight(res.data.target_weight.toString());
-    } catch (err) {
-      console.log('Error fetching profile', err);
-    } finally {
-      setLoading(false);
-    }
+  const [goalModalVisible, setGoalModalVisible] = useState(false);
+  const [profileModalVisible, setProfileModalVisible] = useState(false);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertConfig, setAlertConfig] = useState<{
+    title?: string;
+    message: string;
+    variant?: 'info' | 'success' | 'warning' | 'danger';
+    confirmText?: string;
+    cancelText?: string;
+    onConfirm?: () => void;
+    onCancel?: () => void;
+  } | null>(null);
+
+  const showAlert = (config: typeof alertConfig) => {
+    setAlertConfig(config);
+    setAlertVisible(true);
   };
 
   useEffect(() => {
     fetchProfile();
   }, []);
 
-  // helper
-  const getBMICategory = (bmi: number) => {
-    if (bmi < 18.5)
-      return {
-        label: 'Underweight',
-        color: '#3b82f6',
-        quote: 'Fuel up 💪 Your body needs more energy.',
-      };
-    if (bmi < 25)
-      return {
-        label: 'Healthy',
-        color: '#10b981',
-        quote: 'Great job! 🌟 Keep maintaining your balance.',
-      };
-    if (bmi < 30)
-      return {
-        label: 'Overweight',
-        color: '#f59e0b',
-        quote: 'Small steps 🚶 daily add up to big results.',
-      };
-    return {
-      label: 'Obese',
-      color: '#ef4444',
-      quote: 'You’re stronger than you think ❤️ Start today, not someday.',
-    };
+  const fetchProfile = async () => {
+    try {
+      const res = await client.get('/user/me');
+      setUser(res.data);
+      setGoal(res.data.goals || 'maintain healthy');
+      setTargetWeight(res.data.target_weight?.toString() || '');
+      setName(res.data.name || '');
+      setAge(res.data.age?.toString() || '');
+      setWeight(res.data.weight_kg?.toString() || '');
+      setHeight(res.data.height_cm?.toString() || '');
+      setDietaryPrefs(res.data.dietary_prefs?.join(', ') || '');
+    } catch (err) {
+      console.log('Error fetching profile', err);
+    }
   };
-
-  // inside component
-  const bmi = user?.bmi || 0;
-  const bmiData = getBMICategory(bmi);
-
-  // normalize BMI to position arrow (scale: 0–40 for simplicity)
-  const positionPercent = Math.min((bmi / 40) * 100, 100);
 
   const handleSaveGoals = async () => {
     try {
       await client.post('/user/goals', {
         goals: goal,
         target_weight: Number(targetWeight),
-        unit,
       });
-      Alert.alert('✅ Saved', 'Your goals have been updated.');
       setGoalModalVisible(false);
       fetchProfile();
+      showAlert({
+        title: 'Success',
+        message: 'Your goals have been updated.',
+        variant: 'success',
+        confirmText: 'OK',
+        onConfirm: () => setAlertVisible(false),
+      });
     } catch (err) {
       console.log('Error saving goals', err);
-      Alert.alert('Error', 'Could not save goals');
+      showAlert({
+        title: 'Error',
+        message: 'Could not save goals',
+        variant: 'danger',
+        confirmText: 'OK',
+        onConfirm: () => setAlertVisible(false),
+      });
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await client.put('/user/me', {
+        name,
+        age: age ? Number(age) : null,
+        height_cm: height ? Number(height) : null,
+        weight_kg: weight ? Number(weight) : null,
+        dietary_prefs: dietaryPrefs
+          ? dietaryPrefs.split(',').map((p) => p.trim())
+          : null,
+      });
+      setProfileModalVisible(false);
+      fetchProfile();
+      showAlert({
+        title: 'Success',
+        message: 'Profile updated successfully.',
+        variant: 'success',
+        confirmText: 'OK',
+        onConfirm: () => setAlertVisible(false),
+      });
+    } catch (err) {
+      console.log('Error updating profile', err);
+      showAlert({
+        title: 'Error',
+        message: 'Could not update profile',
+        variant: 'danger',
+        confirmText: 'OK',
+        onConfirm: () => setAlertVisible(false),
+      });
     }
   };
 
@@ -101,28 +133,32 @@ export default function Profile() {
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'This action is permanent. Do you really want to delete your account?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // await client.delete('/user');
-              handleLogout();
-            } catch (err) {
-              Alert.alert('Error', 'Could not delete account');
-            }
-          },
-        },
-      ]
-    );
+    showAlert({
+      title: 'Delete Account',
+      message:
+        'This action is permanent. Do you really want to delete your account?',
+      variant: 'danger',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      onConfirm: async () => {
+        try {
+          await client.delete('/user');
+          handleLogout();
+        } catch (err) {
+          showAlert({
+            title: 'Error',
+            message: 'Could not delete account',
+            variant: 'danger',
+            confirmText: 'OK',
+            onConfirm: () => setAlertVisible(false),
+          });
+        }
+      },
+      onCancel: () => setAlertVisible(false),
+    });
   };
 
-  if (loading) {
+  if (!user) {
     return (
       <View style={styles.center}>
         <Text style={styles.text}>Loading profile...</Text>
@@ -130,9 +166,17 @@ export default function Profile() {
     );
   }
 
+  const bmi = user.bmi || 0;
+  const segments = [
+    { label: 'Underweight', min: 0, max: 18.49, color: '#3b82f6' },
+    { label: 'Normal', min: 18.5, max: 24.99, color: '#22c55e' },
+    { label: 'Overweight', min: 25, max: 29.9, color: '#facc15' },
+    { label: 'Obese', min: 30, max: 100, color: '#ef4444' },
+  ];
+  const activeSegment = segments.find((s) => bmi >= s.min && bmi <= s.max);
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -144,79 +188,35 @@ export default function Profile() {
             color={colors.text}
           />
         </TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.title}>User Account</Text>
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* User Card */}
+      {/* Profile Card */}
       <View style={styles.card}>
-        <View style={styles.avatar} />
+        <View style={styles.rowBetween}>
+          <Text style={styles.sectionTitle}>Profile</Text>
+          <TouchableOpacity onPress={() => setProfileModalVisible(true)}>
+            <MaterialCommunityIcons
+              name="pencil"
+              size={20}
+              color={colors.primary}
+            />
+          </TouchableOpacity>
+        </View>
         <View>
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.name}>{user.name}</Text>
+          <Text style={styles.email}>{user.email}</Text>
           <Text style={styles.meta}>
             {user?.age} yrs • {user?.gender} • {user?.height_cm} cm •{' '}
-            {user?.weight_kg} kg
+            {user?.weight_kg} kg • {user?.dietary_prefs?.join(', ')}
           </Text>
         </View>
       </View>
 
-      {/* BMI Section */}
-      {/* BMI Section */}
+      {/* Goals Card */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>📊 BMI Status</Text>
-        <Text style={{ fontSize: fontSizes.sm, color: colors.muted }}>
-          Your BMI: {bmi.toFixed(1)} ({bmiData.label})
-        </Text>
-
-        {/* Segmented Bar */}
-        <View style={styles.scaleContainer}>
-          <View
-            style={[styles.segment, { backgroundColor: '#3b82f6', flex: 18.5 }]}
-          />
-          <View
-            style={[styles.segment, { backgroundColor: '#10b981', flex: 6.4 }]}
-          />
-          <View
-            style={[styles.segment, { backgroundColor: '#f59e0b', flex: 5 }]}
-          />
-          <View
-            style={[styles.segment, { backgroundColor: '#ef4444', flex: 10 }]}
-          />
-        </View>
-
-        {/* Arrow marker */}
-        <View
-          style={{ marginTop: -6, width: '100%', alignItems: 'flex-start' }}
-        >
-          <Text style={{ left: `${positionPercent}%`, position: 'absolute' }}>
-            🔻
-          </Text>
-        </View>
-
-        {/* Labels for ranges */}
-        <View style={styles.labelsRow}>
-          <Text style={[styles.labelText, { color: '#3b82f6' }]}>Under</Text>
-          <Text style={[styles.labelText, { color: '#10b981' }]}>Healthy</Text>
-          <Text style={[styles.labelText, { color: '#f59e0b' }]}>Over</Text>
-          <Text style={[styles.labelText, { color: '#ef4444' }]}>Obese</Text>
-        </View>
-
-        {/* Motivational Quote */}
-        <Text
-          style={{
-            marginTop: spacing.sm,
-            fontStyle: 'italic',
-            color: bmiData.color,
-          }}
-        >
-          "{bmiData.quote}"
-        </Text>
-      </View>
-
-      {/* Goals */}
-      <View style={styles.card}>
-        <View style={styles.cardHeader}>
+        <View style={styles.rowBetween}>
           <Text style={styles.sectionTitle}>🎯 Goals</Text>
           <TouchableOpacity onPress={() => setGoalModalVisible(true)}>
             <MaterialCommunityIcons
@@ -226,27 +226,68 @@ export default function Profile() {
             />
           </TouchableOpacity>
         </View>
-
-        {/* Display saved goal */}
-        <Text style={styles.goalValue}>{user?.goals || 'No goal set yet'}</Text>
-        <Text style={styles.goalSub}>
-          Target Weight:{' '}
-          {user?.target_weight ? `${user.target_weight} kg` : '—'}
+        <Text style={styles.goalValue}>{user.goals || 'Not set'}</Text>
+        <Text style={styles.goalValue}>
+          Target Weight: {user.target_weight ? `${user.target_weight} kg` : '—'}
         </Text>
       </View>
 
-      {/* Account */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>📊 BMI</Text>
+
+        <View style={styles.bmiLabels}>
+          {segments.map((seg) => (
+            <View key={seg.label} style={styles.bmiLabelContainer}>
+              <Text style={styles.bmiLabelText}>{seg.label}</Text>
+              <Text style={styles.bmiRangeText}>
+                {seg.min}–{seg.max >= 40 ? '40+' : seg.max}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.bmiBar}>
+          {segments.map((seg) => (
+            <View
+              key={seg.label}
+              style={[
+                styles.bmiSegment,
+                {
+                  backgroundColor: seg.color,
+                  flex: Math.min(seg.max, 40) - seg.min,
+                },
+              ]}
+            />
+          ))}
+          <View
+            style={[
+              styles.bmiPointer,
+              { left: `${(Math.min(bmi, 40) / 40) * 100}%` },
+            ]}
+          />
+        </View>
+
+        <Text style={styles.bmiText}>
+          Your BMI: {bmi.toFixed(1)} ({activeSegment?.label || 'N/A'})
+        </Text>
+        <Text style={styles.motivation}>
+          {activeSegment?.label === 'Normal'
+            ? '🔥 Great! Keep maintaining your healthy lifestyle!'
+            : activeSegment?.label === 'Underweight'
+            ? '💡 Time to fuel your body with more nutrients!'
+            : activeSegment?.label === 'Overweight'
+            ? '⚡ Small steps daily will bring big results!'
+            : activeSegment?.label === 'Obese'
+            ? '💪 Every workout brings you closer to a healthier you!'
+            : 'Start your fitness journey today!'}
+        </Text>
+      </View>
+
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>⚙️ Account</Text>
-
-        <TouchableOpacity style={styles.item}>
-          <Text style={styles.itemText}>Update Profile</Text>
-        </TouchableOpacity>
-
         <TouchableOpacity style={styles.item} onPress={handleLogout}>
           <Text style={styles.itemText}>Logout</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.item, { backgroundColor: '#fee2e2' }]}
           onPress={handleDeleteAccount}
@@ -257,6 +298,7 @@ export default function Profile() {
         </TouchableOpacity>
       </View>
 
+      {/* Modals */}
       <ProfileModal
         visible={goalModalVisible}
         title="Update Goals"
@@ -279,7 +321,6 @@ export default function Profile() {
             </TouchableOpacity>
           ))}
         </View>
-
         <Text style={styles.label}>Target Weight (kg)</Text>
         <TextInput
           style={styles.input}
@@ -288,7 +329,62 @@ export default function Profile() {
           onChangeText={setTargetWeight}
         />
       </ProfileModal>
-    </ScrollView>
+
+      <ProfileModal
+        visible={profileModalVisible}
+        title="Update Profile"
+        onClose={() => setProfileModalVisible(false)}
+        onSave={handleSaveProfile}
+      >
+        <Text style={styles.label}>Name</Text>
+        <TextInput style={styles.input} value={name} onChangeText={setName} />
+        <Text style={styles.label}>Age</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={age}
+          onChangeText={setAge}
+        />
+        <Text style={styles.label}>Weight (kg)</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={weight}
+          onChangeText={setWeight}
+        />
+        <Text style={styles.label}>Height (cm)</Text>
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={height}
+          onChangeText={setHeight}
+        />
+        <Text style={styles.label}>Dietary Preferences</Text>
+        <Picker selectedValue={dietaryPrefs} onValueChange={setDietaryPrefs}>
+          <Picker.Item label="Vegetarian" value="veg" />
+          <Picker.Item label="Non-Vegetarian" value="non-veg" />
+          <Picker.Item label="Vegan" value="vegan" />
+        </Picker>
+      </ProfileModal>
+      {alertConfig && (
+        <AlertDialog
+          visible={alertVisible}
+          title={alertConfig.title}
+          message={alertConfig.message}
+          variant={alertConfig.variant || 'info'}
+          confirmText={alertConfig.confirmText}
+          cancelText={alertConfig.cancelText}
+          onConfirm={() => {
+            setAlertVisible(false);
+            alertConfig.onConfirm?.();
+          }}
+          onCancel={() => {
+            setAlertVisible(false);
+            alertConfig.onCancel?.();
+          }}
+        />
+      )}
+    </View>
   );
 }
 
@@ -314,20 +410,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.md,
   },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.border,
-    marginRight: spacing.md,
-  },
   name: { fontSize: fontSizes.lg, fontWeight: '700', color: colors.text },
   email: { fontSize: fontSizes.sm, color: colors.muted },
   meta: { fontSize: fontSizes.sm, color: colors.muted },
+  rowBetween: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   sectionTitle: {
     fontSize: fontSizes.md,
     fontWeight: '600',
     marginBottom: spacing.sm,
+  },
+  goalValue: {
+    fontSize: fontSizes.md,
+    color: colors.text,
+    marginTop: spacing.xs,
   },
   label: { fontSize: fontSizes.sm, color: colors.muted, marginTop: spacing.sm },
   input: {
@@ -338,29 +437,28 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   row: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm },
-  scaleContainer: {
-    flexDirection: 'row',
-    height: 14,
-    borderRadius: 7,
-    overflow: 'hidden',
-    marginTop: spacing.sm,
-  },
-  segment: {
-    height: '100%',
-  },
-  labelsRow: {
+  bmiLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
-  labelText: {
+  bmiLabelContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  bmiLabelText: {
     fontSize: fontSizes.sm,
     fontWeight: '600',
+    color: colors.text,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  bmiRangeText: {
+    fontSize: fontSizes.sm,
+    color: colors.muted,
+  },
+  bmiPointer: {
+    position: 'absolute',
     alignItems: 'center',
+    top: -20,
   },
   goalBtn: {
     flex: 1,
@@ -371,18 +469,7 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xs,
     alignItems: 'center',
   },
-  goalText: { fontSize: fontSizes.sm, color: colors.text, textAlign: 'center' },
-  goalValue: {
-    fontSize: fontSizes.md,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: spacing.sm,
-  },
-  goalSub: {
-    fontSize: fontSizes.sm,
-    color: colors.muted,
-    marginTop: spacing.xs,
-  },
+  goalText: { fontSize: fontSizes.md, color: colors.text },
   item: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
@@ -390,4 +477,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   itemText: { fontSize: fontSizes.md, color: colors.text },
+  bmiBar: {
+    flexDirection: 'row',
+    height: 18,
+    borderRadius: 9,
+    overflow: 'hidden',
+    marginVertical: spacing.sm,
+  },
+  bmiSegment: { height: '100%' },
+  bmiText: {
+    fontSize: fontSizes.md,
+    fontWeight: '600',
+    marginTop: spacing.sm,
+    color: colors.text,
+  },
+  motivation: {
+    fontSize: fontSizes.sm,
+    color: colors.muted,
+    marginTop: spacing.xs,
+    fontStyle: 'italic',
+  },
 });
