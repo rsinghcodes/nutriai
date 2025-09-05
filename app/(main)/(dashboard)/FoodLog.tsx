@@ -26,7 +26,6 @@ export default function FoodLog() {
 
   const daysMap = { week: 7, month: 30, quarter: 90 };
 
-  // 🔹 Fetch summary
   const fetchSummary = async () => {
     try {
       const res = await client.get(`/food-logs/summary?days=${daysMap[range]}`);
@@ -55,7 +54,6 @@ export default function FoodLog() {
     }
   };
 
-  // 🔹 Fetch detailed logs for one day
   const fetchDayLogs = async (date: string) => {
     if (dayLogs[date]) return;
     try {
@@ -90,7 +88,6 @@ export default function FoodLog() {
 
     return (
       <View style={styles.dayCard}>
-        {/* Summary Row */}
         <TouchableOpacity
           style={styles.summaryRow}
           onPress={() => toggleExpand(date)}
@@ -110,7 +107,6 @@ export default function FoodLog() {
           />
         </TouchableOpacity>
 
-        {/* Expanded Details */}
         {expanded && (
           <View style={styles.logsContainer}>
             {!dayLogs[date] ? (
@@ -169,7 +165,6 @@ export default function FoodLog() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -185,7 +180,6 @@ export default function FoodLog() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* Range Toggle */}
       <View style={styles.toggleRow}>
         {(['week', 'month', 'quarter'] as const).map((r) => (
           <TouchableOpacity
@@ -208,7 +202,6 @@ export default function FoodLog() {
         ))}
       </View>
 
-      {/* Chart */}
       {summaries.length > 0 ? (
         <LineChart
           data={chartData}
@@ -244,10 +237,8 @@ export default function FoodLog() {
         />
       )}
 
-      {/* Motivation */}
       <Text style={styles.motivation}>{motivation}</Text>
 
-      {/* Food List */}
       <FlatList
         data={summaries}
         keyExtractor={(item) => item.date}
@@ -255,7 +246,6 @@ export default function FoodLog() {
         contentContainerStyle={{ paddingBottom: spacing.lg }}
       />
 
-      {/* Add Button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => setModalVisible(true)}
@@ -263,7 +253,6 @@ export default function FoodLog() {
         <MaterialCommunityIcons name="plus" size={28} color={colors.card} />
       </TouchableOpacity>
 
-      {/* Modal */}
       <FoodLogModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -343,16 +332,14 @@ const styles = StyleSheet.create({
   text: { fontSize: fontSizes.md, color: colors.muted },
   addButton: {
     position: 'absolute',
-    right: spacing.lg,
     bottom: spacing.lg,
+    right: spacing.lg,
     backgroundColor: colors.primary,
+    padding: spacing.md,
     borderRadius: 50,
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
   },
 });

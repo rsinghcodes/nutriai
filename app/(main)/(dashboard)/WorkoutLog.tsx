@@ -21,13 +21,11 @@ export default function WorkoutLog() {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  // 🔹 Range state (week, month, quarter)
   const [range, setRange] = useState<'week' | 'month' | 'quarter'>('week');
   const [motivation, setMotivation] = useState('');
 
   const daysMap = { week: 7, month: 30, quarter: 90 };
 
-  // 🔹 Fetch summary
   const fetchSummary = async () => {
     try {
       const res = await client.get(
@@ -57,9 +55,8 @@ export default function WorkoutLog() {
     }
   };
 
-  // 🔹 Fetch detailed logs for one day
   const fetchDayLogs = async (date: string) => {
-    if (dayLogs[date]) return; // already loaded
+    if (dayLogs[date]) return;
     try {
       const res = await client.get(`/workout-logs?date=${date}`);
       setDayLogs((prev) => ({ ...prev, [date]: res.data }));
@@ -92,7 +89,6 @@ export default function WorkoutLog() {
 
     return (
       <View style={styles.dayCard}>
-        {/* Summary Row */}
         <TouchableOpacity
           style={styles.summaryRow}
           onPress={() => toggleExpand(date)}
@@ -112,7 +108,6 @@ export default function WorkoutLog() {
           />
         </TouchableOpacity>
 
-        {/* Expanded Details */}
         {expanded && (
           <View style={styles.logsContainer}>
             {!dayLogs[date] ? (
@@ -187,7 +182,6 @@ export default function WorkoutLog() {
         <View style={styles.headerSpacer} />
       </View>
 
-      {/* 🔹 Range Toggle */}
       <View style={styles.toggleRow}>
         {(['week', 'month', 'quarter'] as const).map((r) => (
           <TouchableOpacity
@@ -210,7 +204,6 @@ export default function WorkoutLog() {
         ))}
       </View>
 
-      {/* 🔹 Chart */}
       {summaries.length > 0 ? (
         <LineChart
           data={chartData}
@@ -247,10 +240,8 @@ export default function WorkoutLog() {
         />
       )}
 
-      {/* 🔹 Motivation */}
       <Text style={styles.motivation}>{motivation}</Text>
 
-      {/* 🔹 Workout List */}
       <FlatList
         data={summaries}
         keyExtractor={(item) => item.date}
@@ -258,7 +249,6 @@ export default function WorkoutLog() {
         contentContainerStyle={{ paddingBottom: spacing.lg }}
       />
 
-      {/* ➕ Add Button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => setModalVisible(true)}
@@ -266,7 +256,6 @@ export default function WorkoutLog() {
         <MaterialCommunityIcons name="plus" size={28} color={colors.card} />
       </TouchableOpacity>
 
-      {/* Modal */}
       <WorkoutLogModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
@@ -371,16 +360,14 @@ const styles = StyleSheet.create({
   text: { fontSize: fontSizes.md, color: colors.muted },
   addButton: {
     position: 'absolute',
-    right: spacing.lg,
     bottom: spacing.lg,
+    right: spacing.lg,
     backgroundColor: colors.primary,
+    padding: spacing.md,
     borderRadius: 50,
-    width: 56,
-    height: 56,
-    justifyContent: 'center',
-    alignItems: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 5,
   },
 });

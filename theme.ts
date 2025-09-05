@@ -2,6 +2,7 @@ export const colors = {
   background: "#FAFAFA",
   text: "#222",
   primary: "#2563eb", // blue-600
+  accent: "#06b6d4",
   card: "#fff",
   border: "#e5e7eb", // gray-200
   muted: "#6b7280", // gray-500
