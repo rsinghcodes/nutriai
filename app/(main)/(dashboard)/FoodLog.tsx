@@ -153,7 +153,10 @@ export default function FoodLog() {
 
   const chartData = {
     labels: sortedSummaries.map((d) =>
-      new Date(d.date).toLocaleDateString('en-US', { day: 'numeric' })
+      new Date(d.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
     ),
     datasets: [
       {

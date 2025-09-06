@@ -111,8 +111,6 @@ export default function FoodLogModal({ visible, onClose, onAdded }: any) {
     <Modal visible={visible} animationType="slide">
       <View style={styles.container}>
         <Text style={styles.title}>Add Food Log</Text>
-
-        {/* 🔍 Search */}
         <TextInput
           placeholder="Search food..."
           value={foodQuery}
@@ -120,7 +118,6 @@ export default function FoodLogModal({ visible, onClose, onAdded }: any) {
           style={styles.input}
         />
 
-        {/* 🔽 Sort + Filters */}
         <View style={styles.row}>
           <Picker
             selectedValue={sortBy}
@@ -161,7 +158,6 @@ export default function FoodLogModal({ visible, onClose, onAdded }: any) {
           />
         </View>
 
-        {/* Autocomplete / Food List */}
         {searchResults.length > 0 && !selectedFood && (
           <FlatList
             data={searchResults}
@@ -225,12 +221,11 @@ export default function FoodLogModal({ visible, onClose, onAdded }: any) {
           </View>
         )}
 
-        {/* Buttons */}
         <View style={styles.buttons}>
           <MinimalButton
             title="Cancel"
             onPress={() => {
-              resetForm(); // ⬅️ Clear state
+              resetForm();
               onClose();
             }}
           />
